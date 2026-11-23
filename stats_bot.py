@@ -322,7 +322,11 @@ def stats(db, now):
     per = {}
     for r in db.values():
         s = per.setdefault(r["m"], {"new7": 0, "gone7": 0, "days": [], "cohort": 0, "fast": 0,
-                                    "prices": {}, "drops": 0, "n30": 0})
+                                    "prices": {}, "drops": 0, "n30": 0, "active": 0})
+        if not r.get("g") and now - r["l"] < 3 * 86400:
+            s["active"] += 1
+        if (r.get("x") or r["f"] >= month) and (not r.get("g") or r["g"] >= month):
+            s["prices"].setdefault(r.get("gb"), []).append(r["p0"])   # ceny aj z inzerátov spred spustenia
         if r["f"] >= week and not r.get("x"):
             s["new7"] += 1
         if r.get("g") and r["g"] >= week:
@@ -331,7 +335,6 @@ def stats(db, now):
             s["days"].append((r["g"] - r["f"]) / 86400)
         if r["f"] >= month and not r.get("x"):
             s["n30"] += 1
-            s["prices"].setdefault(r.get("gb"), []).append(r["p0"])
             if r.get("d"):
                 s["drops"] += 1
             if now - r["f"] >= 3 * 86400:          # dosť starý na posúdenie "zmizol do 3 dní"
@@ -343,7 +346,7 @@ def stats(db, now):
         gb_lists = {k: v for k, v in s["prices"].items() if v}
         main_gb = max(gb_lists, key=lambda k: len(gb_lists[k])) if gb_lists else None
         price = round(statistics.median(gb_lists[main_gb]) / 5) * 5 if main_gb in gb_lists else None
-        out[m] = {"new7": s["new7"], "gone7": s["gone7"], "n30": s["n30"],
+        out[m] = {"new7": s["new7"], "gone7": s["gone7"], "n30": s["n30"], "active": s["active"],
                   "med_days": statistics.median(s["days"]) if s["days"] else None, "sold30": len(s["days"]),
                   "fast_pct": round(100 * s["fast"] / s["cohort"]) if s["cohort"] else None, "cohort": s["cohort"],
                   "price": price, "gb": main_gb, "drop_pct": round(100 * s["drops"] / s["n30"]) if s["n30"] else None}
@@ -482,11 +485,11 @@ def build_report(send):
 
     by_cat = {}
     for m, s in st.items():
-        if s["n30"] or s["gone7"]:
+        if s["n30"] or s["gone7"] or s["active"]:
             by_cat.setdefault(category(m), []).append((m, s))
     for cat in sorted(by_cat):
         lines += ["", f"<b>{cat}</b>  (model: cena · nové/7d · zmizlo/7d · medián predaja)"]
-        for m, s in sorted(by_cat[cat], key=lambda x: -x[1]["n30"]):
+        for m, s in sorted(by_cat[cat], key=lambda x: -x[1]["active"]):
             if s["price"]:
                 gb = f" {s['gb']}" if s["gb"] else ""
                 old = prev.get(m)
@@ -640,12 +643,12 @@ def export():
     day = lambda ts: time.strftime("%d.%m.%Y %H:%M", time.localtime(ts)) if ts else ""
     with open(DATA / "statistiky.csv", "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f, delimiter=";")
-        w.writerow(["Kategória", "Model", "Medián ceny €", "Variant (najčastejší)", "Inzerátov za 30 dní",
+        w.writerow(["Kategória", "Model", "Medián ceny €", "Variant (najčastejší)", "Aktívnych inzerátov", "Nových za 30 dní",
                     "Nových za 7 dní", "Zmizlo za 7 dní", "Zmizlo za 30 dní", "Medián dní do predaja",
                     "% zmizne do 3 dní", "% zlacnených"])
-        for m, x in sorted(st.items(), key=lambda kv: (category(kv[0]), -kv[1]["n30"])):
+        for m, x in sorted(st.items(), key=lambda kv: (category(kv[0]), -kv[1]["active"], -kv[1]["n30"])):
             gb = x["gb"] or ""
-            w.writerow([category(m), m, x["price"] or "", gb, x["n30"], x["new7"], x["gone7"], x["sold30"],
+            w.writerow([category(m), m, x["price"] or "", gb, x["active"], x["n30"], x["new7"], x["gone7"], x["sold30"],
                         f"{x['med_days']:.1f}".replace(".", ",") if x["med_days"] is not None else "",
                         x["fast_pct"] if x["fast_pct"] is not None else "",
                         x["drop_pct"] if x["drop_pct"] is not None else ""])
