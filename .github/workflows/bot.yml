@@ -1,0 +1,69 @@
+name: Bazoš štatistiky
+
+on:
+  schedule:
+    - cron: "17 */2 * * *"     # zber dát každé 2 hodiny
+    - cron: "7 18 * * 0"       # týždenný prehľad – nedeľa 19:07 (v zime) / 20:07 (v lete) slovenského času
+    - cron: "*/20 * * * *"     # evidencia flipov – správy z Telegramu (rýchle, Bazoš nenačítava)
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "scan = zber dát, report = poslať prehľad, flips = spracovať správy o flipoch"
+        default: scan
+        type: choice
+        options: [scan, report, flips]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stats-data
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -q requests beautifulsoup4
+
+      # dáta medzi behmi drží cache; raz denne sa zálohujú do repozitára
+      - uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: stats-${{ github.run_id }}
+          restore-keys: stats-
+
+      - name: Spustiť
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MODE=scan
+          if [ "${{ github.event.schedule }}" = "7 18 * * 0" ]; then MODE=report; fi
+          if [ "${{ github.event.schedule }}" = "*/20 * * * *" ]; then MODE=flips; fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then MODE="${{ inputs.mode }}"; fi
+          echo "Režim: $MODE"
+          python stats_bot.py $MODE
+
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: data
+          key: stats-${{ github.run_id }}
+
+      - name: Denná záloha dát do repozitára
+        run: |
+          H=$(date -u +%H)
+          if [ "$H" = "02" ] || [ "$H" = "03" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event.schedule }}" = "7 18 * * 0" ]; then
+            git config user.name "stats-bot"
+            git config user.email "stats-bot@users.noreply.github.com"
+            git add data
+            git diff --cached --quiet || (git commit -m "dáta $(date -u +%F)" && git pull --rebase -X ours && git push)
+          fi
