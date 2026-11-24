@@ -58,11 +58,21 @@ _http = requests.Session()
 
 
 def get(url):
-    time.sleep(1.5 + random.random())
-    r = _http.get(url, headers=UA, timeout=25, allow_redirects=True)
-    if r.status_code in (403, 429, 503):
-        raise Blocked(f"HTTP {r.status_code}")
-    return r
+    for attempt in range(3):
+        time.sleep(1.5 + random.random())
+        try:
+            r = _http.get(url, headers=UA, timeout=25, allow_redirects=True)
+        except requests.RequestException:
+            if attempt == 2:
+                raise
+            time.sleep(15)
+            continue
+        if r.status_code in (403, 429, 503):
+            if attempt == 2:
+                raise Blocked(f"HTTP {r.status_code}")
+            time.sleep(30 * (attempt + 1))            # krátke pribrzdenie Bazoša – počkaj a skús znova
+            continue
+        return r
 
 
 # ---------------------------------------------------------------- rozpoznanie modelu
@@ -360,6 +370,44 @@ def sold_items(db, now, days=60):
             and r["g"] - r["f"] <= 45 * 86400]
 
 
+SOLD_FILE = DATA / "predajne_ceny.json"   # skutočné predajné ceny – číta ich Bazoš strážca (ceny.py)
+SOLD_MIN_N = 5
+
+
+def sold_key(r):
+    """Názov modelu rovnako ako v strážcovi: iPhony s kapacitou ('iPhone 15 Pro 256 GB'), ostatné bez."""
+    if r["m"].startswith("iPhone"):
+        return f"{r['m']} {r['gb']}" if r.get("gb") else None
+    return r["m"]
+
+
+def sold_prices(db, now, days=45):
+    """Za koľko sa kusy naozaj predali: posledná cena inzerátu tesne pred zmiznutím.
+    Nepočíta inzeráty, ktoré viseli 28+ dní (vypršali, nepredali sa)."""
+    lim = now - days * 86400
+    groups = {}
+    for r in db.values():
+        g = r.get("g")
+        if not g or g < lim:
+            continue
+        if not r.get("x") and g - r["f"] >= 28 * 86400:
+            continue
+        k = sold_key(r)
+        if k:
+            groups.setdefault(k, []).append((r["p"], None if r.get("x") else (g - r["f"]) / 86400))
+    out = {}
+    for k, items in groups.items():
+        if len(items) < SOLD_MIN_N:
+            continue
+        ps = sorted(p for p, _ in items)
+        cut = len(ps) // 10                                  # orež 10 % extrémov z oboch strán
+        core = ps[cut:len(ps) - cut] or ps
+        ds = [d for _, d in items if d is not None]
+        out[k] = {"cena": int(round(statistics.median(core) / 5) * 5), "n": len(items),
+                  "dni": round(statistics.median(ds), 1) if ds else None}
+    return out
+
+
 def ideal_prices(db, now):
     """Pri akej cene sa model predá rýchlo a kde je strop. Delí predané kusy na 3 cenové pásma."""
     groups = {}
@@ -470,6 +518,14 @@ def build_report(send):
             vv = f" {v}" if v else ""
             txt = " | ".join(f"{lo}–{hi} €: {fmt_days(d)}" for lo, hi, d in bands)
             lines.append(f"• {esc(m)}{esc(vv)}: {txt}")
+
+    sp = sold_prices(db, now)
+    if sp:
+        top = sorted(sp.items(), key=lambda kv: -kv[1]["n"])[:12]
+        lines += ["", "🏷 <b>Skutočné predajné ceny</b> (posledná cena pred predajom, 45 dní)"]
+        for k, x in top:
+            d = f" · predané za {fmt_days(x['dni'])}" if x["dni"] is not None else ""
+            lines.append(f"• {esc(k)}: <b>{x['cena']} €</b> ({x['n']} ks){d}")
 
     days, parts = best_timing(db, now)
     if days:
@@ -692,6 +748,14 @@ def export():
                 for lo, hi, d in bands:
                     row += [f"{lo}–{hi}", f"{d:.1f}".replace(".", ",")]
                 w.writerow(row)
+    sp = sold_prices(db, now)
+    save(SOLD_FILE, {"updated": now, "dni": 45, "ceny": sp})
+    if sp:
+        with open(DATA / "predajne_ceny.csv", "w", newline="", encoding="utf-8-sig") as f:
+            w = csv.writer(f, delimiter=";")
+            w.writerow(["Model", "Predajná cena €", "Predaných kusov (45 dní)", "Medián dní do predaja"])
+            for k, x in sorted(sp.items(), key=lambda kv: (category(kv[0]), kv[0])):
+                w.writerow([k, x["cena"], x["n"], f"{x['dni']:.1f}".replace(".", ",") if x["dni"] is not None else ""])
     hist = load(HISTORY, {})
     if hist:
         models = sorted({m for h in hist.values() for m in h})
