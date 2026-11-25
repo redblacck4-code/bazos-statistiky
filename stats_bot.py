@@ -57,18 +57,18 @@ class Blocked(Exception):
 _http = requests.Session()
 
 
-def get(url):
-    for attempt in range(3):
+def get(url, tries=3):
+    for attempt in range(tries):
         time.sleep(1.5 + random.random())
         try:
             r = _http.get(url, headers=UA, timeout=25, allow_redirects=True)
         except requests.RequestException:
-            if attempt == 2:
+            if attempt == tries - 1:
                 raise
             time.sleep(15)
             continue
         if r.status_code in (403, 429, 503):
-            if attempt == 2:
+            if attempt == tries - 1:
                 raise Blocked(f"HTTP {r.status_code}")
             time.sleep(30 * (attempt + 1))            # krátke pribrzdenie Bazoša – počkaj a skús znova
             continue
@@ -179,14 +179,20 @@ def parse_list(html, base):
     return out
 
 
+DETAIL_CODES = {}      # diagnostika: aké odpovede vracia Bazoš pri overovaní zmiznutých
+
+
 def is_gone(url):
     """True = inzerát už neexistuje, False = stále je, None = nevedno (chyba siete)."""
     try:
-        r = get(url)
+        r = get(url, tries=2)
     except Blocked:
+        DETAIL_CODES["blokované"] = DETAIL_CODES.get("blokované", 0) + 1
         raise
     except requests.RequestException:
+        DETAIL_CODES["sieť"] = DETAIL_CODES.get("sieť", 0) + 1
         return None
+    DETAIL_CODES[str(r.status_code)] = DETAIL_CODES.get(str(r.status_code), 0) + 1
     if r.status_code in (404, 410):
         return True
     if r.status_code != 200:
@@ -295,17 +301,29 @@ def scan():
                  if not r.get("g") and i not in seen
                  and any(k in thresholds and int(i) >= thresholds[k] for k in r.get("k", []))]
         cands.sort(key=lambda x: x[1]["l"])
-        gone = 0
+        meta["fails"], meta["warned"] = 0, False      # zoznamy prešli – zber je v poriadku
+        gone, checked, streak = 0, 0, 0
         for i, r in cands[:MAX_DETAIL]:
-            res = is_gone(r["u"])
+            try:
+                res = is_gone(r["u"])
+            except Blocked as e:                       # overovanie detailu zlyhalo – zber dát tým nezahadzuj
+                streak += 1
+                if streak >= 3:
+                    print(f"[!] overovanie zmiznutých zastavené: {e}", file=sys.stderr)
+                    break
+                time.sleep(20)
+                continue
+            streak = 0
+            checked += 1
             if res is True:
                 r["g"] = now
                 gone += 1
             elif res is False:
                 r["l"] = now
-        meta["fails"], meta["warned"] = 0, False
+        meta["detail"] = {"cas": time.strftime("%d.%m. %H:%M"), "kandidatov": len(cands), "overenych": checked,
+                          "zmizlo": gone, "odpovede": DETAIL_CODES}
         print(f"{time.strftime('%d.%m. %H:%M')} nové {new}, zmenená cena {changed}, zmizlo {gone}, "
-              f"overených {min(len(cands), MAX_DETAIL)}/{len(cands)}, sledovaných {sum(1 for r in db.values() if not r.get('g'))}")
+              f"overených {checked}/{len(cands)} {DETAIL_CODES}, sledovaných {sum(1 for r in db.values() if not r.get('g'))}")
     except (Blocked, requests.RequestException) as e:
         meta["fails"] = meta.get("fails", 0) + 1
         print(f"[!] Bazoš: {e} (neúspešných behov po sebe: {meta['fails']})", file=sys.stderr)
