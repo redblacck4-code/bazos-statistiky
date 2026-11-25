@@ -207,6 +207,33 @@ def is_gone(url):
     return None
 
 
+BATCH_GAP = 250        # inzeráty s ID bližšie ako toto pridal pravdepodobne ten istý predajca naraz
+BATCH_MIN = 3
+
+
+def mark_batches(db, now):
+    """Predajca (bazár) zmaže/obnoví naraz viac inzerátov – to nie sú predaje. Ak zmizne 3+ inzerátov,
+    ktoré boli pridané tesne po sebe (blízke ID), označí ich ako hromadné zmazanie (b=1) a nepočítajú sa."""
+    recent = sorted((int(i), r) for i, r in db.items() if r.get("g") and r["g"] >= now - 6 * 3600)
+    marked, group = 0, []
+    for iid, r in recent + [(None, None)]:
+        if group and (iid is None or iid - group[-1][0] > BATCH_GAP):
+            if len(group) >= BATCH_MIN:
+                for _, gr in group:
+                    if not gr.get("b"):
+                        gr["b"] = 1
+                        marked += 1
+            group = []
+        if iid is not None:
+            group.append((iid, r))
+    return marked
+
+
+def sold(r):
+    """Zmizol a nejde o hromadné zmazanie predajcom = berieme ako predaný."""
+    return bool(r.get("g")) and not r.get("b")
+
+
 # ---------------------------------------------------------------- dáta
 def load(path, default):
     try:
@@ -292,6 +319,7 @@ def scan():
                             changed += 1
                         if rec.get("g"):           # objavil sa znova (napr. obnovený inzerát)
                             rec["g"] = None
+                            rec.pop("b", None)
                         continue
                     c = classify(it["title"], it["snippet"])
                     if not c or it["price"] <= 0:
@@ -337,7 +365,8 @@ def scan():
                 gone += 1
             elif res is False:
                 r["l"] = now
-        meta["detail"] = {"cas": time.strftime("%d.%m. %H:%M"), "zablokovane_hladania": blocked_q, "kandidatov": len(cands), "overenych": checked,
+        batch = mark_batches(db, now)
+        meta["detail"] = {"hromadne_zmazane": batch, "cas": time.strftime("%d.%m. %H:%M"), "zablokovane_hladania": blocked_q, "kandidatov": len(cands), "overenych": checked,
                           "zmizlo": gone, "odpovede": DETAIL_CODES}
         print(f"{time.strftime('%d.%m. %H:%M')} nové {new}, zmenená cena {changed}, zmizlo {gone}, "
               f"overených {checked}/{len(cands)} {DETAIL_CODES}, sledovaných {sum(1 for r in db.values() if not r.get('g'))}")
@@ -374,9 +403,9 @@ def stats(db, now):
             s["prices"].setdefault(r.get("gb"), []).append(r["p0"])   # ceny aj z inzerátov spred spustenia
         if r["f"] >= week and not r.get("x"):
             s["new7"] += 1
-        if r.get("g") and r["g"] >= week:
+        if sold(r) and r["g"] >= week:
             s["gone7"] += 1
-        if r.get("g") and r["g"] >= month and not r.get("x"):
+        if sold(r) and r["g"] >= month and not r.get("x"):
             s["days"].append((r["g"] - r["f"]) / 86400)
         if r["f"] >= month and not r.get("x"):
             s["n30"] += 1
@@ -384,7 +413,7 @@ def stats(db, now):
                 s["drops"] += 1
             if now - r["f"] >= 3 * 86400:          # dosť starý na posúdenie "zmizol do 3 dní"
                 s["cohort"] += 1
-                if r.get("g") and r["g"] - r["f"] <= 3 * 86400:
+                if sold(r) and r["g"] - r["f"] <= 3 * 86400:
                     s["fast"] += 1
     out = {}
     for m, s in per.items():
@@ -401,7 +430,7 @@ def stats(db, now):
 def sold_items(db, now, days=60):
     """Inzeráty, ktoré zmizli (≈ predané) za posledných `days` dní, bez tých, čo existovali pred spustením."""
     lim = now - days * 86400
-    return [r for r in db.values() if r.get("g") and r["g"] >= lim and not r.get("x")
+    return [r for r in db.values() if sold(r) and r["g"] >= lim and not r.get("x")
             and r["g"] - r["f"] <= 45 * 86400]
 
 
@@ -423,7 +452,7 @@ def sold_prices(db, now, days=45):
     groups = {}
     for r in db.values():
         g = r.get("g")
-        if not g or g < lim:
+        if not sold(r) or g < lim:
             continue
         if not r.get("x") and g - r["f"] >= 28 * 86400:
             continue
@@ -477,14 +506,14 @@ def best_flips(db, now):
         ps = sorted(r["p0"] for r in rs)
         cheap = ps[max(0, round((len(ps) - 1) * 0.15))]
         med = statistics.median(ps)
-        sold = [(r["g"] - r["f"]) / 86400 for r in rs if r.get("g")]
+        sold_d = [(r["g"] - r["f"]) / 86400 for r in rs if sold(r)]
         old = [r for r in rs if now - r["f"] >= 3 * 86400]
-        fast = sum(1 for r in old if r.get("g") and r["g"] - r["f"] <= 3 * 86400) / len(old) if len(old) >= 4 else None
-        if fast is None or not sold:
+        fast = sum(1 for r in old if sold(r) and r["g"] - r["f"] <= 3 * 86400) / len(old) if len(old) >= 4 else None
+        if fast is None or not sold_d:
             continue
         spread = med * 0.93 - cheap                         # predáš ~7 % pod mediánom
         out.append({"m": m, "v": v, "cheap": round(cheap / 5) * 5, "med": round(med / 5) * 5,
-                    "spread": round(spread), "fast": round(fast * 100), "days": statistics.median(sold),
+                    "spread": round(spread), "fast": round(fast * 100), "days": statistics.median(sold_d),
                     "score": spread * fast, "n": len(rs)})
     out.sort(key=lambda x: -x["score"])
     return out
@@ -750,7 +779,8 @@ def export():
         for r in sorted(db.values(), key=lambda r: -r["f"]):
             end = r.get("g") or now
             w.writerow([r["m"], r.get("gb") or "", r["t"], r["p0"], r["p"], "áno" if r.get("d") else "",
-                        "pred začiatkom" if r.get("x") else day(r["f"]), day(r.get("g")),
+                        "pred začiatkom" if r.get("x") else day(r["f"]),
+                        day(r.get("g")) + (" (hromadne zmazané)" if r.get("b") else ""),
                         "" if r.get("x") else f"{(end - r['f']) / 86400:.1f}".replace(".", ","), r["u"]])
     fl = load(FLIPS, [])
     if fl:
