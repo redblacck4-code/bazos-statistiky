@@ -59,7 +59,7 @@ _http = requests.Session()
 
 def get(url, tries=3):
     for attempt in range(tries):
-        time.sleep(1.5 + random.random())
+        time.sleep(2.5 + 1.5 * random.random())      # pomalšie tempo – Bazoš inak po ~150 požiadavkách brzdí
         try:
             r = _http.get(url, headers=UA, timeout=25, allow_redirects=True)
         except requests.RequestException:
@@ -253,14 +253,27 @@ def scan():
     seeding = not db                     # úplne prvý beh: inzeráty už existovali, čas predaja sa nepočíta
     now = time.time()
     seen, thresholds, new, changed = set(), {}, 0, 0
+    blocked_q, streak_q = [], 0
     try:
         for key, sec, q, cena_od in QUERIES:
             base = f"https://{sec}.bazos.sk"
             last_ids = []
+            if streak_q >= 2:                      # Bazoš brzdí – zvyšné hľadania nechaj na ďalší beh
+                blocked_q.append(key)
+                continue
             for p in range(MAX_PAGES):
                 off = f"{p * 20}/" if p else ""
                 url = f"{base}/{off}?hledat={requests.utils.quote(q)}&hlokalita=&humkreis=&cenaod={cena_od}&cenado="
-                r = get(url)
+                try:
+                    r = get(url)
+                except Blocked as e:
+                    print(f"[!] {q}: {e} – preskakujem, pauza 2 min", file=sys.stderr)
+                    blocked_q.append(key)
+                    streak_q += 1
+                    last_ids = None
+                    time.sleep(120)
+                    break
+                streak_q = 0
                 if r.status_code != 200:
                     break
                 items = parse_list(r.text, base)
@@ -294,7 +307,11 @@ def scan():
                 if len(items) < 20:
                     last_ids = []                  # koniec výsledkov – pokrytie celého hľadania
                     break
+            if last_ids is None:
+                continue                           # zablokované hľadanie – jeho inzeráty teraz neoverujeme
             thresholds[key] = min(last_ids) if last_ids else 0
+        if not seen:
+            raise Blocked("žiadne hľadanie neprešlo")
 
         # inzeráty, ktoré mali byť vo výsledkoch, ale neboli -> overiť, či zmizli
         cands = [(i, r) for i, r in db.items()
@@ -320,7 +337,7 @@ def scan():
                 gone += 1
             elif res is False:
                 r["l"] = now
-        meta["detail"] = {"cas": time.strftime("%d.%m. %H:%M"), "kandidatov": len(cands), "overenych": checked,
+        meta["detail"] = {"cas": time.strftime("%d.%m. %H:%M"), "zablokovane_hladania": blocked_q, "kandidatov": len(cands), "overenych": checked,
                           "zmizlo": gone, "odpovede": DETAIL_CODES}
         print(f"{time.strftime('%d.%m. %H:%M')} nové {new}, zmenená cena {changed}, zmizlo {gone}, "
               f"overených {checked}/{len(cands)} {DETAIL_CODES}, sledovaných {sum(1 for r in db.values() if not r.get('g'))}")
