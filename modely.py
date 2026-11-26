@@ -46,7 +46,7 @@ OTHER = [
     (r"macbook\s*pro.*\bm1\b", "MacBook Pro 13 M1", 580),
     # Galaxy S26 (február 2026; nové 1000 / 1250 / 1450 €)
     (r"galaxy\s*s26\s*ultra|\bs26\s*ultra", "Galaxy S26 Ultra", 850),
-    (r"\bs26\s*(\+|plus)", "Galaxy S26+", 650), (r"(galaxy\s*)?\bs26\b", "Galaxy S26", 560),
+    (r"\bs26\s*(\+|plus)", "Galaxy S26+", 650), (r"\bs26\s*fe\b", "Galaxy S26 FE", 520), (r"(galaxy\s*)?\bs26\b", "Galaxy S26", 560),
     (r"galaxy\s*s25\s*ultra|\bs25\s*ultra", "Galaxy S25 Ultra", 680),
     (r"galaxy\s*s24\s*ultra|\bs24\s*ultra", "Galaxy S24 Ultra", 600),
     (r"galaxy\s*s23\s*ultra|\bs23\s*ultra", "Galaxy S23 Ultra", 400),
@@ -63,16 +63,16 @@ OTHER = [
     (r"z\s*flip\s*7|flip\s*7", "Galaxy Z Flip 7", 560),
     (r"z\s*flip\s*6|flip\s*6", "Galaxy Z Flip 6", 370),
     (r"z\s*flip\s*5|flip\s*5", "Galaxy Z Flip 5", 250),
-    (r"watch\s*ultra\s*4", "Apple Watch Ultra 4", 650),            # september 2026
-    (r"watch\s*ultra\s*3", "Apple Watch Ultra 3", 445),
-    (r"watch\s*ultra\s*2", "Apple Watch Ultra 2", 390),
+    (r"watch\s*ultra\s*4(?!\d)", "Apple Watch Ultra 4", 650),            # september 2026
+    (r"watch\s*ultra\s*3(?!\d)", "Apple Watch Ultra 3", 445),
+    (r"watch\s*ultra\s*2(?!\d)", "Apple Watch Ultra 2", 390),
     (r"apple\s*watch\s*ultra|watch\s*ultra\s*1", "Apple Watch Ultra", 265),
-    (r"(?!.*(galaxy|samsung|huawei|xiaomi|amazfit|garmin)).*watch\s*(series\s*)?12\b", "Apple Watch Series 12", 330),
-    (r"(?!.*(galaxy|samsung|huawei|xiaomi|amazfit|garmin)).*watch\s*(series\s*)?11\b", "Apple Watch Series 11", 300),
-    (r"(?!.*(galaxy|samsung|huawei|xiaomi|amazfit|garmin)).*watch\s*(series\s*)?10\b", "Apple Watch Series 10", 250),
-    (r"(?!.*(galaxy|samsung|huawei|xiaomi|amazfit|garmin)).*watch\s*(series\s*)?9\b", "Apple Watch Series 9", 190),
-    (r"(?!.*(galaxy|samsung|huawei|xiaomi|amazfit|garmin)).*watch\s*(series\s*)?8\b", "Apple Watch Series 8", 135),
-    (r"(?!.*(galaxy|samsung|huawei|xiaomi|amazfit|garmin)).*watch\s*se\b", "Apple Watch SE", 110),
+    (r"(?s)^(?!.*(galaxy|samsung|huawei|xiaomi|amazfit|garmin)).*watch\s*(series\s*)?12\b", "Apple Watch Series 12", 330),
+    (r"(?s)^(?!.*(galaxy|samsung|huawei|xiaomi|amazfit|garmin)).*watch\s*(series\s*)?11\b", "Apple Watch Series 11", 300),
+    (r"(?s)^(?!.*(galaxy|samsung|huawei|xiaomi|amazfit|garmin)).*watch\s*(series\s*)?10\b", "Apple Watch Series 10", 250),
+    (r"(?s)^(?!.*(galaxy|samsung|huawei|xiaomi|amazfit|garmin)).*watch\s*(series\s*)?9\b", "Apple Watch Series 9", 190),
+    (r"(?s)^(?!.*(galaxy|samsung|huawei|xiaomi|amazfit|garmin)).*watch\s*(series\s*)?8\b", "Apple Watch Series 8", 135),
+    (r"(?s)^(?!.*(galaxy|samsung|huawei|xiaomi|amazfit|garmin)).*watch\s*se\b", "Apple Watch SE", 110),
     # --- Garmin ---
     (r"f[eē]nix\s*9\s*pro", "Garmin Fenix 9 Pro", 900),           # august 2026
     (r"f[eē]nix\s*9", "Garmin Fenix 9", 750),
