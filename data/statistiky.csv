@@ -81,22 +81,22 @@ Samsung;Galaxy Z Fold 6;625;512 GB;11;1;1;0;0;;;0
 Samsung;Galaxy S24 FE;275;128 GB;9;4;4;0;0;;;0
 Samsung;Galaxy S23 FE;245;128 GB;9;2;2;0;0;;;0
 Samsung;Galaxy S25+;600;512 GB;7;1;1;0;0;;;0
-iPhone;iPhone 16 Pro;650;128 GB;181;131;131;6;0;;;2
-iPhone;iPhone 15 Pro;500;128 GB;149;90;90;7;0;;;6
-iPhone;iPhone 13;235;128 GB;137;79;79;9;0;;;3
+iPhone;iPhone 16 Pro;650;128 GB;179;132;132;9;0;;;2
+iPhone;iPhone 15 Pro;500;128 GB;148;90;90;8;0;;;6
+iPhone;iPhone 13;235;128 GB;138;80;80;8;0;;;2
 iPhone;iPhone 14;280;128 GB;117;70;70;5;0;;;1
-iPhone;iPhone 16 Pro Max;730;256 GB;113;63;63;4;0;;;2
-iPhone;iPhone 17 Pro;950;256 GB;112;65;65;3;0;;;2
+iPhone;iPhone 17 Pro;950;256 GB;109;65;65;5;0;;;2
+iPhone;iPhone 16 Pro Max;730;256 GB;108;63;63;7;0;;;2
 iPhone;iPhone 13 Pro;310;128 GB;101;60;60;4;0;;;3
-iPhone;iPhone 15;380;128 GB;100;62;62;2;0;;;5
+iPhone;iPhone 15;380;128 GB;99;62;62;3;0;;;5
 iPhone;iPhone 15 Pro Max;580;256 GB;97;67;67;5;0;;;1
-iPhone;iPhone 17 Pro Max;1030;256 GB;96;45;45;4;0;;;2
-iPhone;iPhone 18 Pro;1300;256 GB;91;31;31;2;0;;;3
-iPhone;iPhone 17;840;256 GB;78;47;47;6;0;;;0
+iPhone;iPhone 17 Pro Max;1030;256 GB;92;45;45;7;0;;;2
+iPhone;iPhone 18 Pro;1300;256 GB;84;31;31;9;0;;;3
 iPhone;iPhone 14 Pro;400;128 GB;76;43;43;9;1;2,2;;5
+iPhone;iPhone 17;840;256 GB;75;47;47;9;0;;;0
 iPhone;iPhone 14 Pro Max;430;256 GB;69;41;41;5;1;2,2;;5
-iPhone;iPhone 18 Pro Max;1450;256 GB;69;18;18;2;0;;;6
-iPhone;iPhone Air;680;256 GB;68;23;23;1;0;;;13
+iPhone;iPhone Air;680;256 GB;66;23;23;2;0;;;13
+iPhone;iPhone 18 Pro Max;1450;256 GB;66;18;18;5;0;;;6
 iPhone;iPhone 16;560;128 GB;54;32;32;4;0;;;12
 iPhone;iPhone 13 mini;230;128 GB;50;26;26;3;0;;;4
 iPhone;iPhone 12;165;128 GB;43;28;28;2;0;;;4
@@ -108,4 +108,4 @@ iPhone;iPhone 12 mini;175;128 GB;16;12;12;2;1;2,2;;0
 iPhone;iPhone 12 Pro Max;230;128 GB;14;11;11;0;0;;;0
 iPhone;iPhone 15 Plus;365;128 GB;14;10;10;1;0;;;0
 iPhone;iPhone 16 Plus;600;128 GB;14;10;10;1;0;;;0
-iPhone;iPhone 17e;520;256 GB;9;4;4;0;0;;;0
+iPhone;iPhone 17e;520;256 GB;8;4;4;1;0;;;0
