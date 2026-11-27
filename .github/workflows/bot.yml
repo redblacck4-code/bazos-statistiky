@@ -2,9 +2,8 @@ name: Bazoš štatistiky
 
 on:
   schedule:
-    - cron: "17 */2 * * *"     # zber dát každé 2 hodiny
+    # zber dát (každé 2 h) a flipy (každých 20 min) spúšťa cron-job.org – GitHub plánovač je nespoľahlivý
     - cron: "7 18 * * 0"       # týždenný prehľad – nedeľa 19:07 (v zime) / 20:07 (v lete) slovenského času
-    - cron: "*/20 * * * *"     # evidencia flipov – správy z Telegramu (rýchle, Bazoš nenačítava)
   workflow_dispatch:
     inputs:
       mode:
@@ -51,7 +50,6 @@ jobs:
         run: |
           MODE=scan
           if [ "${{ github.event.schedule }}" = "7 18 * * 0" ]; then MODE=report; fi
-          if [ "${{ github.event.schedule }}" = "*/20 * * * *" ]; then MODE=flips; fi
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then MODE="${{ inputs.mode }}"; fi
           echo "Režim: $MODE"
           python stats_bot.py $MODE
