@@ -3,7 +3,7 @@ Apple Watch;Apple Watch Ultra 2;370;;54;34;34;4;0;;0;12
 Apple Watch;Apple Watch SE;120;;32;16;16;3;1;1,8;0;19
 Apple Watch;Apple Watch Ultra;255;;32;13;13;4;0;;0;0
 Apple Watch;Apple Watch Ultra 3;540;;21;13;13;1;0;;0;0
-Apple Watch;Apple Watch Series 10;225;;20;10;10;2;1;2,4;0;0
+Apple Watch;Apple Watch Series 10;225;;20;10;10;2;1;2,4;50;0
 Apple Watch;Apple Watch Series 8;130;;18;7;7;2;0;;;0
 Apple Watch;Apple Watch Series 11;295;;15;5;5;2;0;;;0
 Apple Watch;Apple Watch Ultra 4;750;;14;11;11;2;0;;0;0
@@ -16,16 +16,16 @@ Garmin;Garmin Fenix 7 Pro;370;;11;1;1;1;0;;;0
 Garmin;Garmin Venu 3/X1;190;;9;1;1;1;0;;;0
 Garmin;Garmin Epix 2;305;;8;0;0;0;0;;;
 Garmin;Garmin Fenix 7;250;;7;0;0;1;0;;;
-Garmin;Garmin Forerunner 955;205;;4;2;2;2;0;;;0
+Garmin;Garmin Forerunner 955;205;;4;2;2;2;0;;0;0
 Garmin;Garmin Forerunner 265/570;325;;4;1;1;1;0;;;0
 Garmin;Garmin Epix Pro;420;;4;0;0;0;0;;;
 Garmin;Garmin Fenix 9 Pro;990;;2;1;1;0;0;;;0
 Garmin;Garmin Forerunner 965;295;;2;1;1;0;0;;;0
 Garmin;Garmin Forerunner 255;160;;2;0;0;0;0;;;
 Garmin;Garmin Fenix 9;370;;1;0;0;0;0;;;
-Konzoly;PS5 s mechanikou;650;;62;52;52;13;7;1,8;50;4
+Konzoly;PS5 s mechanikou;650;;62;52;52;13;7;1,8;43;4
 Konzoly;Nintendo Switch OLED;250;;56;55;55;0;0;;;4
-Konzoly;PS5 Slim s mechanikou;700;;51;46;46;19;6;2,2;25;13
+Konzoly;PS5 Slim s mechanikou;700;;51;46;46;19;6;2,2;38;13
 Konzoly;PS5 Pro;1325;;23;16;16;5;1;2,0;;19
 Konzoly;Nintendo Switch 2;450;;20;19;19;1;0;;;0
 Konzoly;Steam Deck OLED 512GB;560;;15;14;14;0;0;;;7
@@ -39,7 +39,7 @@ Mac;iMac 24 M1;735;8/256;12;1;1;0;0;;;0
 Mac;Mac mini M4;695;16/256;11;1;1;0;0;;;0
 Mac;iMac 24 M3;1000;8/256;6;0;0;0;0;;;
 Mac;Mac mini M2;375;;3;1;1;2;1;2,7;100;0
-Mac;Mac mini M1;430;8/512;3;1;1;2;0;;;0
+Mac;Mac mini M1;430;8/512;3;1;1;2;0;;0;0
 Mac;Mac mini M2 Pro;735;16/512;3;0;0;0;0;;;
 Mac;Mac mini M4 Pro;1600;24/512;3;0;0;0;0;;;
 Mac;iMac 24 M4;1095;SSD 256;2;0;0;0;0;;;
@@ -48,32 +48,32 @@ MacBook;MacBook Air M2;700;8/256;36;11;11;4;0;;0;9
 MacBook;MacBook Air M4;900;16/256;29;7;7;4;0;;0;0
 MacBook;MacBook Pro M2–M4 Pro/Max;1300;18/512;26;3;3;0;0;;;0
 MacBook;MacBook Pro M1 Pro/Max;885;16/512;19;3;3;1;0;;;0
-MacBook;MacBook Pro 13 M1;460;;17;5;5;1;0;;;20
+MacBook;MacBook Pro 13 M1;460;;17;5;5;1;0;;0;20
 MacBook;MacBook Air M5;1085;16/512;8;0;0;1;0;;;
 MacBook;MacBook Neo;650;SSD 256;8;0;0;0;0;;;
 MacBook;MacBook Air M3;825;8/512;7;3;3;3;0;;;0
-MacBook;MacBook Pro 14 M4;1400;16/512;5;2;2;0;0;;;0
+MacBook;MacBook Pro 14 M4;1400;16/512;5;2;2;0;0;;0;0
 MacBook;MacBook Pro M5 Pro/Max;2450;24/1TB;4;0;0;0;0;;;
 MacBook;MacBook Pro 13 M2;750;8/256;3;1;1;0;0;;;0
 MacBook;MacBook Pro 14 M5;1775;;3;0;0;1;0;;;
 MacBook;MacBook Pro 14 M3;1000;8/512;2;1;1;2;0;;;0
 Ostatné;iPad Air (M);570;;1;0;0;0;0;;;
 Samsung;Galaxy S25 Ultra;725;512 GB;63;33;33;0;0;;0;6
-Samsung;Galaxy S24 Ultra;570;256 GB;60;26;26;2;0;;;8
-Samsung;Galaxy S26;650;256 GB;60;24;24;4;1;2,2;25;4
-Samsung;Galaxy S26 Ultra;980;512 GB;54;39;39;8;2;2,3;25;10
-Samsung;Galaxy S25;490;256 GB;54;30;30;5;2;2,4;20;7
+Samsung;Galaxy S24 Ultra;570;256 GB;60;26;26;2;0;;0;8
+Samsung;Galaxy S26;650;256 GB;60;24;24;4;1;2,2;17;4
+Samsung;Galaxy S26 Ultra;980;512 GB;54;39;39;8;2;2,3;17;10
+Samsung;Galaxy S25;490;256 GB;54;30;30;5;2;2,4;14;7
 Samsung;Galaxy S24;310;128 GB;48;25;25;5;1;2,4;;4
 Samsung;Galaxy S23;275;256 GB;44;14;14;3;0;;0;14
-Samsung;Galaxy S23 Ultra;350;256 GB;40;23;23;11;5;1,8;;0
+Samsung;Galaxy S23 Ultra;350;256 GB;40;23;23;11;5;1,8;50;0
 Samsung;Galaxy Z Flip 6;350;256 GB;35;14;14;3;0;;0;0
 Samsung;Galaxy Z Flip 7;550;512 GB;30;13;13;3;0;;0;8
 Samsung;Galaxy Z Fold 8;1200;256 GB;26;14;14;6;1;2,1;;7
-Samsung;Galaxy Z Fold 7;820;512 GB;23;9;9;2;0;;;0
+Samsung;Galaxy Z Fold 7;820;512 GB;23;9;9;2;0;;0;0
 Samsung;Galaxy Z Fold 5;455;512 GB;19;4;4;1;0;;;0
 Samsung;Galaxy S23+;350;512 GB;18;7;7;2;0;;;0
 Samsung;Galaxy S25 FE;435;128 GB;17;9;9;4;1;2,0;;0
-Samsung;Galaxy Z Flip 5;280;512 GB;17;7;7;4;2;2,4;;0
+Samsung;Galaxy Z Flip 5;280;512 GB;17;7;7;4;2;2,4;0;0
 Samsung;Galaxy Z Fold 8 Ultra;1280;256 GB;14;6;6;1;0;;0;0
 Samsung;Galaxy Z Fold 6;400;256 GB;12;4;4;2;0;;;0
 Samsung;Galaxy Z Flip 8;710;256 GB;9;4;4;2;0;;;0
@@ -81,31 +81,31 @@ Samsung;Galaxy S23 FE;245;128 GB;8;3;3;2;0;;;0
 Samsung;Galaxy S25+;565;512 GB;8;2;2;0;0;;;0
 Samsung;Galaxy S24+;400;512 GB;8;1;1;3;0;;;0
 Samsung;Galaxy S24 FE;270;128 GB;7;5;5;2;2;1,7;0;0
-iPhone;iPhone 16 Pro;645;128 GB;159;161;161;18;5;1,9;10;4
-iPhone;iPhone 13;235;128 GB;155;114;114;16;4;2,4;14;4
-iPhone;iPhone 15 Pro;500;128 GB;149;128;128;23;8;2,1;20;7
-iPhone;iPhone 14;280;128 GB;122;98;98;14;5;1,8;0;1
-iPhone;iPhone 13 Pro;300;128 GB;115;92;92;6;1;2,4;11;4
-iPhone;iPhone 16 Pro Max;730;256 GB;108;82;82;12;2;2,1;0;1
-iPhone;iPhone 15;380;128 GB;107;88;88;12;7;2,0;0;3
-iPhone;iPhone 15 Pro Max;590;256 GB;100;98;98;11;2;2,2;0;3
-iPhone;iPhone 17 Pro Max;1000;256 GB;100;67;67;18;5;2,8;17;4
-iPhone;iPhone 17 Pro;950;256 GB;90;81;81;15;5;1,9;11;2
-iPhone;iPhone 14 Pro;400;128 GB;88;67;67;10;1;2,2;14;4
+iPhone;iPhone 16 Pro;645;128 GB;158;161;161;18;5;1,9;6;4
+iPhone;iPhone 13;235;128 GB;155;114;114;16;4;2,4;16;4
+iPhone;iPhone 15 Pro;500;128 GB;149;128;128;23;8;2,1;13;7
+iPhone;iPhone 14;280;128 GB;122;98;98;14;5;1,8;13;1
+iPhone;iPhone 13 Pro;300;128 GB;115;92;92;6;1;2,4;6;4
+iPhone;iPhone 16 Pro Max;730;256 GB;108;82;82;12;2;2,1;10;1
+iPhone;iPhone 15;380;128 GB;107;88;88;12;7;2,0;12;3
+iPhone;iPhone 15 Pro Max;590;256 GB;100;98;98;11;2;2,2;7;3
+iPhone;iPhone 17 Pro Max;1000;256 GB;100;67;67;18;5;2,8;10;4
+iPhone;iPhone 17 Pro;950;256 GB;90;81;81;15;5;1,9;7;2
+iPhone;iPhone 14 Pro;400;128 GB;88;67;67;10;1;2,2;9;4
 iPhone;iPhone 18 Pro;1300;256 GB;87;48;48;14;0;;0;6
-iPhone;iPhone 18 Pro Max;1450;256 GB;74;37;37;10;1;2,2;0;8
-iPhone;iPhone 14 Pro Max;435;256 GB;70;59;59;15;7;2,4;38;5
+iPhone;iPhone 18 Pro Max;1450;256 GB;74;37;37;10;1;2,2;50;8
+iPhone;iPhone 14 Pro Max;435;256 GB;70;59;59;15;7;2,4;50;5
 iPhone;iPhone 13 mini;240;128 GB;70;52;52;5;1;3,3;0;4
 iPhone;iPhone 16;550;128 GB;66;47;47;4;0;;0;13
-iPhone;iPhone 17;800;256 GB;61;62;62;13;2;2,4;0;2
+iPhone;iPhone 17;800;256 GB;61;62;62;13;2;2,4;17;2
 iPhone;iPhone Air;670;256 GB;55;30;30;15;2;2,4;0;17
 iPhone;iPhone 12 Pro;200;128 GB;49;44;44;2;0;;0;2
 iPhone;iPhone 12;160;128 GB;48;37;37;3;0;;0;3
 iPhone;iPhone 13 Pro Max;410;256 GB;32;27;27;3;1;1,8;0;0
 iPhone;iPhone 14 Plus;320;128 GB;25;17;17;3;0;;0;0
 iPhone;iPhone 16e;410;128 GB;23;21;21;1;1;1,5;0;5
-iPhone;iPhone 12 mini;175;128 GB;18;15;15;2;1;2,2;50;0
+iPhone;iPhone 12 mini;175;128 GB;18;15;15;2;1;2,2;33;0
 iPhone;iPhone 12 Pro Max;230;128 GB;17;17;17;1;1;1,8;0;0
 iPhone;iPhone 15 Plus;365;128 GB;13;13;13;3;1;2,0;0;0
-iPhone;iPhone 16 Plus;600;128 GB;10;11;11;1;0;;;0
+iPhone;iPhone 16 Plus;600;128 GB;10;11;11;1;0;;0;0
 iPhone;iPhone 17e;510;256 GB;6;5;5;2;0;;0;0
