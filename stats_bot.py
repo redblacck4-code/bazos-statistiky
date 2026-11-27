@@ -649,7 +649,9 @@ def tg_api(method, **params):
 def reply(text):
     chat = (os.getenv("TELEGRAM_CHAT_ID") or "").strip("'\" ")
     if chat:
-        tg_api("sendMessage", chat_id=chat, text=text, parse_mode="HTML", disable_web_page_preview="true")
+        r = tg_api("sendMessage", chat_id=chat, text=text, parse_mode="HTML", disable_web_page_preview="true")
+        if not r or not r.get("ok"):
+            print(f"[!] Telegram odpoveď neodišla: {r}", file=sys.stderr)
     else:
         print(text)
 
@@ -690,9 +692,15 @@ def process_flips():
     """Prečíta nové správy pre bota a zapíše kúpy/predaje. Prijíma iba správy z TELEGRAM_CHAT_ID."""
     chat = (os.getenv("TELEGRAM_CHAT_ID") or "").strip("'\" ")
     st = load(STATE_TG, {"offset": 0})
+    if not chat:
+        print("[!] TELEGRAM_CHAT_ID nie je nastavené (GitHub → Settings → Secrets)", file=sys.stderr)
     res = tg_api("getUpdates", offset=st["offset"], timeout=0, allowed_updates='["message"]')
     if not res or not res.get("ok"):
+        print(f"[!] Telegram getUpdates zlyhal: {res if res else 'žiadna odpoveď / chýba TELEGRAM_TOKEN'}", file=sys.stderr)
         return
+    ids = {str((u.get("message") or {}).get("chat", {}).get("id")) for u in res.get("result", [])}
+    print(f"Telegram: nových správ {len(res.get('result', []))}" + (f", z chatov {sorted(ids)}" if ids else "")
+          + ("" if not ids or chat in ids else f" – POZOR: TELEGRAM_CHAT_ID je iné ({chat[:3]}…)"))
     fl = load(FLIPS, [])
     changed = False
     for u in res.get("result", []):
