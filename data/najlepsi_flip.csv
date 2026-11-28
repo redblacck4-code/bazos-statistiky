@@ -1,47 +1,50 @@
 ﻿Model;Variant;Lacné kusy od €;Medián €;Rozdiel €;% predaných do 3 dní;Medián dní;Inzerátov 30 dní
-PS5 Slim s mechanikou;;600;740;87;22;2,2;55
-iPhone 14 Pro Max;256 GB;370;430;30;55;2,4;29
+iPhone 13;;180;250;52;60;2,7;31
+PS5 Slim s mechanikou;;600;740;87;23;2,2;57
 Apple Watch Series 10;;180;230;32;40;2,7;12
-iPhone 16 Pro Max;512 GB;760;885;63;17;2,5;16
-PS5 s mechanikou;;550;620;27;30;1,8;63
+iPhone 14 Pro Max;256 GB;370;425;25;50;2,4;30
+iPhone 15;;325;380;28;29;1,8;30
+iPhone 16 Pro Max;512 GB;760;885;63;12;2,5;16
+PS5 s mechanikou;;550;620;26;30;1,8;64
 iPhone 12 Pro Max;128 GB;150;190;27;25;1,8;15
-iPhone 15;;325;380;28;20;1,8;30
-iPhone 15;128 GB;330;380;23;24;2,2;70
-iPhone 17;256 GB;680;850;110;5;2,3;63
+iPhone 15;128 GB;330;380;23;23;2,2;70
 iPhone 14 Pro Max;;350;400;22;20;2,2;17
-Apple Watch SE;;75;105;23;17;2,1;18
-iPhone 15 Pro;;450;500;15;25;2,8;30
+iPhone 17;256 GB;680;850;110;4;2,3;64
 iPhone 13 Pro;256 GB;250;300;28;12;2,7;20
+Apple Watch SE;;75;105;23;14;2,1;18
 iPhone 15 Pro;256 GB;460;510;15;20;1,8;52
-iPhone 13 Pro;;280;320;18;14;3,1;28
-iPhone 16 Pro;256 GB;630;700;20;12;2,8;64
-iPhone 17 Pro;256 GB;860;950;24;8;1,7;69
-iPhone 13;128 GB;200;235;20;9;3,0;90
-iPhone 16 Pro;128 GB;580;640;16;11;2,6;99
-iPhone 16;128 GB;500;555;17;8;2,8;35
-iPhone 15 Pro Max;256 GB;525;580;14;9;2,9;109
+iPhone 15 Pro;;450;500;15;20;2,8;30
+iPhone 13 Pro;;280;320;18;12;3,1;28
+iPhone 16 Pro;256 GB;630;700;20;11;2,6;64
+iPhone 13;128 GB;200;235;20;9;3,0;91
+iPhone 16;128 GB;490;550;24;8;2,8;36
+iPhone 17 Pro;256 GB;860;950;24;7;1,7;71
+iPhone 16 Pro;128 GB;580;640;16;10;2,6;99
+iPhone 15 Pro Max;256 GB;525;580;14;8;2,8;109
 iPhone 13 mini;128 GB;200;230;13;8;3,3;43
 iPhone 17 Pro Max;256 GB;930;1010;9;10;3,1;56
 Galaxy S26;256 GB;600;650;6;10;2,6;21
-iPhone 14;128 GB;250;270;2;9;1,8;91
-iPhone 12;128 GB;130;150;10;0;1,9;23
-iPhone 13 Pro;128 GB;280;300;0;6;3,2;56
-iPhone 14 Pro;128 GB;350;390;13;0;1,8;34
+iPhone 15 Pro;128 GB;460;500;5;5;2,6;64
+iPhone 14;128 GB;250;270;2;8;1,8;92
+iPhone 12;128 GB;130;150;10;0;1,8;23
+iPhone 13 Pro;128 GB;280;300;0;5;3,2;56
+iPhone 14 Pro;128 GB;350;390;13;0;2,2;34
 iPhone 13 Pro Max;256 GB;390;430;9;0;3,2;12
 iPhone 12 Pro;256 GB;150;195;31;0;3,5;16
 iPhone Air;256 GB;595;670;28;0;2,2;31
-iPhone 18 Pro;256 GB;1200;1275;-15;0;1,9;50
+iPhone 18 Pro;256 GB;1200;1275;-15;0;2,3;50
 Galaxy S23;256 GB;235;245;-5;0;3,2;12
 Galaxy Z Flip 6;256 GB;330;355;1;0;3,0;12
-Apple Watch Ultra 2;;330;365;9;0;2,3;43
+Apple Watch Ultra 2;;330;365;9;0;2,4;43
+Apple Watch Ultra 3;;480;520;4;0;2,2;17
 iPhone 12;;130;165;23;0;2,4;14
+iPhone 16 Pro;1 TB;810;870;-1;0;3,3;10
 iPhone 17 Pro Max;;850;1000;80;0;1,4;11
-iPhone 16 Pro Max;256 GB;670;720;-1;11;2,5;74
-iPhone 15 Pro;128 GB;470;500;-4;6;2,6;63
-Galaxy S24;256 GB;300;320;-2;17;3,2;10
+iPhone 16 Pro Max;256 GB;670;720;0;10;2,5;75
+Galaxy S24;256 GB;300;320;-2;17;2,8;10
 iPhone 16e;128 GB;375;400;-4;17;2,7;19
 iPhone 13;256 GB;240;250;-6;50;2,5;12
-Galaxy S25;256 GB;470;480;-24;20;2,4;30
-iPhone 17 Pro;512 GB;1000;1030;-42;22;1,9;23
-Galaxy S26 Ultra;512 GB;930;950;-47;25;2,3;26
+Galaxy S25;256 GB;470;480;-24;17;2,4;32
+iPhone 17 Pro;512 GB;1000;1030;-42;20;1,9;23
+Galaxy S26 Ultra;512 GB;930;950;-47;22;2,3;27
 Galaxy S23 Ultra;256 GB;350;350;-24;75;1,7;27
