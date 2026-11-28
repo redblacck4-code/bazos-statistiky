@@ -245,6 +245,39 @@ def fingerprint(it):
     return f"{_norm(it['title'])}|{_norm(it.get('loc'))}|{_norm(it.get('snippet'))[:80]}"
 
 
+# ---- stav kusu (z nadpisu a začiatku popisu, bez otvárania inzerátu)
+_NEG_ST = re.compile(r"(\bnie\b|\bnikdy\b|\bnebol\w*|\bbez\b|\bnemá\b|\bžiadn\w*|\bziadn\w*)[^.,;!?]{0,20}$", re.I)
+ST_BROKEN = re.compile(r"(displej|obrazovk|lcd|sklo|zadn\w* sk|chrbt)[^.]{0,30}(rozbit|prask|pukn|poškod|čiar|nefunk)|"
+                       r"(rozbit|prask|pukn)\w*[^.]{0,25}(displej|obrazovk|sklo|zadn)|face\s*id\s*(nefung|nejde|nefunk)|"
+                       r"nefunguje\s*(face|kamer|nabíjan|nabijan|reproduk|mikrof)|okrem\b|na\s*opravu|poškoden|rozbit", re.I)
+ST_NEW = re.compile(r"\bnov[ýáé]\b|nerozbal|zabalen|zapečaten|zapecaten|sealed|\bnepoužit|\bnepouzit", re.I)
+ST_TOP = re.compile(r"záruk|zaruk|ako\s*nov|top\s*stav|perfekt|10\s*/\s*10|bez\s*(škrab|skrab|vád|vad)|krabic|komplet", re.I)
+_BAT = re.compile(r"(\d{2,3})\s?%")
+STAVY = {"new": "🆕 nový", "top": "⭐ top / záruka", "ok": "✅ bežný", "bat": "🔋 batéria pod 85 %", "broken": "🔧 poškodený"}
+
+
+def _hit(rx, t):
+    return any(not _NEG_ST.search(t[max(0, m.start() - 25):m.start()]) for m in rx.finditer(t))
+
+
+def condition(title, snippet=""):
+    t = f"{title} {snippet}"
+    if _hit(ST_BROKEN, t):
+        return "broken"
+    bats = [int(b) for b in _BAT.findall(t) if 50 <= int(b) <= 100]
+    if _hit(ST_NEW, title) and not bats or re.search(r"nerozbal|zabalen|zapečaten|zapecaten|sealed", t, re.I):
+        return "new"
+    if bats and bats[0] < 85:
+        return "bat"
+    if (bats and bats[0] >= 90) or _hit(ST_TOP, t):
+        return "top"
+    return "ok"
+
+
+def cond(r):
+    return r.get("st") or condition(r.get("t", ""))
+
+
 RELIST_DAYS = 14
 
 
@@ -370,7 +403,8 @@ def scan():
                         continue                   # diely, preklepy, nezmysly
                     db[it["id"]] = {"m": model, "gb": gb, "t": it["title"][:80], "u": it["url"],
                                     "p": it["price"], "p0": it["price"], "f": now, "l": now, "g": None,
-                                    "k": [key], "x": 1 if seeding else 0, "h": fingerprint(it)}
+                                    "k": [key], "x": 1 if seeding else 0, "h": fingerprint(it),
+                                    "st": condition(it["title"], it["snippet"])}
                     new += 1
                 last_ids = [int(i["id"]) for i in items]
                 if len(items) < 20:
@@ -442,7 +476,8 @@ def stats(db, now):
         if not r.get("g") and now - r["l"] < 3 * 86400:
             s["active"] += 1
         if (r.get("x") or r["f"] >= month) and (not r.get("g") or r["g"] >= month):
-            s["prices"].setdefault(r.get("gb"), []).append(r["p0"])   # ceny aj z inzerátov spred spustenia
+            if cond(r) in ("ok", "top", "bat"):
+                s["prices"].setdefault(r.get("gb"), []).append(r["p0"])   # ceny aj z inzerátov spred spustenia
         if r["f"] >= week and not r.get("x"):
             s["new7"] += 1
         if sold(r) and r["g"] >= week:
@@ -500,7 +535,11 @@ def sold_prices(db, now, days=45):
             continue
         k = sold_key(r)
         if k:
-            groups.setdefault(k, []).append((r["p"], None if r.get("x") else (g - r["f"]) / 86400))
+            c = cond(r)
+            item = (r["p"], None if r.get("x") else (g - r["f"]) / 86400)
+            groups.setdefault((k, c), []).append(item)
+            if c in ("ok", "top"):
+                groups.setdefault(k, []).append(item)     # hlavná cena = funkčný kus (bez nových a poškodených)
     out = {}
     for k, items in groups.items():
         if len(items) < SOLD_MIN_N:
@@ -509,9 +548,13 @@ def sold_prices(db, now, days=45):
         cut = len(ps) // 10                                  # orež 10 % extrémov z oboch strán
         core = ps[cut:len(ps) - cut] or ps
         ds = [d for _, d in items if d is not None]
-        out[k] = {"cena": int(round(statistics.median(core) / 5) * 5), "n": len(items),
-                  "dni": round(statistics.median(ds), 1) if ds else None}
-    return out
+        val = {"cena": int(round(statistics.median(core) / 5) * 5), "n": len(items),
+               "dni": round(statistics.median(ds), 1) if ds else None}
+        if isinstance(k, tuple):
+            out.setdefault(k[0], {}).setdefault("stavy", {})[k[1]] = val
+        else:
+            out.setdefault(k, {}).update(val)
+    return {k: v for k, v in out.items() if "cena" in v or v.get("stavy")}
 
 
 def ideal_prices(db, now):
@@ -627,7 +670,7 @@ def build_report(send):
 
     sp = sold_prices(db, now)
     if sp:
-        top = sorted(sp.items(), key=lambda kv: -kv[1]["n"])[:12]
+        top = sorted(((k, x) for k, x in sp.items() if "cena" in x), key=lambda kv: -kv[1]["n"])[:12]
         lines += ["", "🏷 <b>Skutočné predajné ceny</b> (posledná cena pred predajom, 45 dní)"]
         for k, x in top:
             d = f" · predané za {fmt_days(x['dni'])}" if x["dni"] is not None else ""
@@ -815,23 +858,33 @@ def web_data(db, now):
     sold_from = min((r["g"] for r in db.values() if r.get("g")), default=now)
     per = {}
     for r in db.values():
-        x = per.setdefault(r["m"], {"new": 0, "sold": 0, "act": 0, "drop": 0, "sp": [], "ap": [], "d": []})
+        x = per.setdefault(r["m"], {"new": 0, "sold": 0, "act": 0, "drop": 0, "sp": [], "ap": [], "d": [], "st": {}})
+        c = cond(r)
+        y = x["st"].setdefault(c, {"sp": [], "ap": [], "d": []})
         if not r.get("x"):
             x["new"] += 1
         if r.get("d"):
             x["drop"] += 1
         if sold(r):
             x["sold"] += 1
-            x["sp"].append(r["p"])
+            y["sp"].append(r["p"])
+            if c in ("ok", "top"):
+                x["sp"].append(r["p"])
             if not r.get("x"):
                 x["d"].append((r["g"] - r["f"]) / 86400)
+                y["d"].append((r["g"] - r["f"]) / 86400)
         elif not r.get("g"):
             x["act"] += 1
-            x["ap"].append(r["p"])
+            y["ap"].append(r["p"])
+            if c in ("ok", "top"):
+                x["ap"].append(r["p"])
     med = lambda v: round(statistics.median(v) / 5) * 5 if v else None
     models = [{"m": m, "c": category(m), "new": x["new"], "sold": x["sold"], "act": x["act"], "drop": x["drop"],
                "sp": med(x["sp"]), "ap": med(x["ap"]),
-               "days": round(statistics.median(x["d"]), 1) if x["d"] else None}
+               "days": round(statistics.median(x["d"]), 1) if x["d"] else None,
+               "st": {c: {"sp": med(y["sp"]), "ns": len(y["sp"]), "ap": med(y["ap"]), "na": len(y["ap"]),
+                          "days": round(statistics.median(y["d"]), 1) if y["d"] else None}
+                      for c, y in x["st"].items()}}
               for m, x in per.items() if x["act"] + x["sold"] >= 5]
     hist = load(HISTORY, {})
     return {"updated": now, "od": start, "predaje_od": sold_from, "modely": models,
@@ -904,9 +957,12 @@ def export():
     if sp:
         with open(DATA / "predajne_ceny.csv", "w", newline="", encoding="utf-8-sig") as f:
             w = csv.writer(f, delimiter=";")
-            w.writerow(["Model", "Predajná cena €", "Predaných kusov (45 dní)", "Medián dní do predaja"])
+            w.writerow(["Model", "Stav", "Predajná cena €", "Predaných kusov (45 dní)", "Medián dní do predaja"])
             for k, x in sorted(sp.items(), key=lambda kv: (category(kv[0]), kv[0])):
-                w.writerow([k, x["cena"], x["n"], f"{x['dni']:.1f}".replace(".", ",") if x["dni"] is not None else ""])
+                rows = ([("funkčný (bežný + top)", x)] if "cena" in x else []) + \
+                       [(STAVY[c], v) for c, v in x.get("stavy", {}).items()]
+                for lab, v in rows:
+                    w.writerow([k, lab, v["cena"], v["n"], f"{v['dni']:.1f}".replace(".", ",") if v["dni"] is not None else ""])
     hist = load(HISTORY, {})
     if hist:
         models = sorted({m for h in hist.values() for m in h})
