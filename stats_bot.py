@@ -274,6 +274,51 @@ def condition(title, snippet=""):
     return "ok"
 
 
+MAX_MEM = int(os.getenv("MAX_MEM", "20"))
+
+
+def mem_missing(r):
+    if r.get("mv") or r.get("g"):
+        return False
+    gb = r.get("gb") or ""
+    if r["m"].startswith(("iPhone", "Galaxy")):
+        return not gb
+    if r["m"].startswith("MacBook"):
+        return "/" not in gb
+    return False
+
+
+def detail_text(url):
+    try:
+        r = get(url, tries=2)
+    except requests.RequestException:
+        return None
+    if r.status_code != 200:
+        return None
+    d = BeautifulSoup(r.text, "html.parser").select_one(".popisdetail")
+    return re.sub(r"\s+", " ", d.get_text(" ", strip=True)) if d else None
+
+
+def fill_memory(db):
+    """Kapacitu / RAM a SSD hľadá v celom popise – iba pri inzerátoch, kde chýba v nadpise (pár za beh)."""
+    todo = sorted((r for r in db.values() if mem_missing(r)), key=lambda r: -r["f"])[:MAX_MEM]
+    done = 0
+    for r in todo:
+        try:
+            txt = detail_text(r["u"])
+        except Blocked:
+            break                                          # Bazoš brzdí – zvyšok nabudúce
+        if txt is None:
+            continue
+        r["mv"] = 1                                        # overené, znova neotvárať
+        c = classify(r["t"], txt[:600])
+        if c and c[0] == r["m"] and c[1]:
+            r["gb"] = c[1]
+            done += 1
+        r["st"] = condition(r["t"], txt[:400])             # stav podľa celého popisu (batéria, poškodenie)
+    return done
+
+
 def cond(r):
     return r.get("st") or condition(r.get("t", ""))
 
@@ -416,6 +461,9 @@ def scan():
         if not seen:
             raise Blocked("žiadne hľadanie neprešlo")
 
+        # pamäť nie je v nadpise -> otvor inzerát (len tie, najviac MAX_MEM za beh)
+        filled = fill_memory(db)
+
         # inzeráty, ktoré mali byť vo výsledkoch, ale neboli -> overiť, či zmizli
         cands = [(i, r) for i, r in db.items()
                  if not r.get("g") and i not in seen
@@ -442,7 +490,7 @@ def scan():
                 r["l"] = now
         batch = mark_batches(db, now)
         relist = link_relists(db, now)
-        meta["detail"] = {"hromadne_zmazane": batch, "znovu_pridane": relist, "cas": time.strftime("%d.%m. %H:%M"), "zablokovane_hladania": blocked_q, "kandidatov": len(cands), "overenych": checked,
+        meta["detail"] = {"doplnena_pamat": filled, "hromadne_zmazane": batch, "znovu_pridane": relist, "cas": time.strftime("%d.%m. %H:%M"), "zablokovane_hladania": blocked_q, "kandidatov": len(cands), "overenych": checked,
                           "zmizlo": gone, "odpovede": DETAIL_CODES}
         print(f"{time.strftime('%d.%m. %H:%M')} nové {new}, zmenená cena {changed}, zmizlo {gone}, "
               f"overených {checked}/{len(cands)} {DETAIL_CODES}, sledovaných {sum(1 for r in db.values() if not r.get('g'))}")
@@ -534,6 +582,8 @@ def sold_prices(db, now, days=45):
         if not r.get("x") and g - r["f"] >= 28 * 86400:
             continue
         k = sold_key(r)
+        if k and not r["m"].startswith("iPhone") and r.get("gb") and cond(r) in ("ok", "top"):
+            groups.setdefault((k, "var:" + r["gb"]), []).append((r["p"], None if r.get("x") else (g - r["f"]) / 86400))
         if k:
             c = cond(r)
             item = (r["p"], None if r.get("x") else (g - r["f"]) / 86400)
@@ -550,11 +600,13 @@ def sold_prices(db, now, days=45):
         ds = [d for _, d in items if d is not None]
         val = {"cena": int(round(statistics.median(core) / 5) * 5), "n": len(items),
                "dni": round(statistics.median(ds), 1) if ds else None}
-        if isinstance(k, tuple):
+        if isinstance(k, tuple) and k[1].startswith("var:"):
+            out.setdefault(k[0], {}).setdefault("varianty", {})[k[1][4:]] = val
+        elif isinstance(k, tuple):
             out.setdefault(k[0], {}).setdefault("stavy", {})[k[1]] = val
         else:
             out.setdefault(k, {}).update(val)
-    return {k: v for k, v in out.items() if "cena" in v or v.get("stavy")}
+    return {k: v for k, v in out.items() if "cena" in v or v.get("stavy") or v.get("varianty")}
 
 
 def ideal_prices(db, now):
@@ -960,7 +1012,8 @@ def export():
             w.writerow(["Model", "Stav", "Predajná cena €", "Predaných kusov (45 dní)", "Medián dní do predaja"])
             for k, x in sorted(sp.items(), key=lambda kv: (category(kv[0]), kv[0])):
                 rows = ([("funkčný (bežný + top)", x)] if "cena" in x else []) + \
-                       [(STAVY[c], v) for c, v in x.get("stavy", {}).items()]
+                       [(STAVY[c], v) for c, v in x.get("stavy", {}).items()] + \
+                       [(f"konfigurácia {g}", v) for g, v in x.get("varianty", {}).items()]
                 for lab, v in rows:
                     w.writerow([k, lab, v["cena"], v["n"], f"{v['dni']:.1f}".replace(".", ",") if v["dni"] is not None else ""])
     hist = load(HISTORY, {})
