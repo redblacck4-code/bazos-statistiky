@@ -42,7 +42,8 @@ QUERIES += [(q.replace(" ", ""), "mobil", q, 80) for q in
 QUERIES += [("applewatch", "mobil", "apple watch", 50), ("garmin", "mobil", "garmin", 80)]
 QUERIES += [(q.replace(" ", ""), "pc", q, 150) for q in ("macbook air", "macbook pro", "mac mini", "imac")]
 QUERIES += [(q.replace(" ", ""), "pc", q, 120) for q in
-            ("ps5", "playstation 5", "xbox series x", "steam deck", "nintendo switch")]
+            ("ps5", "playstation 5", "xbox series x")]
+SKIP_MODELS = ("Nintendo", "Steam Deck")      # nesledujeme – takmer sa nepredávajú
 
 CATEGORY = [("iPhone", "iPhone"), ("MacBook", "MacBook"), ("Mac mini", "Mac"), ("iMac", "Mac"),
             ("Galaxy", "Samsung"), ("Apple Watch", "Apple Watch"), ("AirPods", "Ostatné"), ("iPad", "Ostatné"),
@@ -93,7 +94,7 @@ def classify(title, snippet=""):
         return None
     c = M.console_estimate(title)
     if c:
-        if c[0].startswith(("Ovládač", "DualSense")):
+        if c[0].startswith(("Ovládač", "DualSense") + SKIP_MODELS):
             return None                                   # ovládače nesledujeme
         return c[0], None, c[1]
     t = full.lower()
@@ -230,8 +231,48 @@ def mark_batches(db, now):
 
 
 def sold(r):
-    """Zmizol a nejde o hromadné zmazanie predajcom = berieme ako predaný."""
-    return bool(r.get("g")) and not r.get("b")
+    """Zmizol a nejde o hromadné zmazanie ani o znovu pridaný inzerát = berieme ako predaný."""
+    return bool(r.get("g")) and not r.get("b") and not r.get("re")
+
+
+def _norm(t):
+    t = re.sub(r"[^a-z0-9á-ž ]", " ", (t or "").lower())
+    return re.sub(r"\s+", " ", t).strip()
+
+
+def fingerprint(it):
+    """Odtlačok inzerátu: nadpis + lokalita + začiatok popisu. Rovnaký odtlačok = ten istý kus znovu pridaný."""
+    return f"{_norm(it['title'])}|{_norm(it.get('loc'))}|{_norm(it.get('snippet'))[:80]}"
+
+
+RELIST_DAYS = 14
+
+
+def link_relists(db, now):
+    """Predajca zmaže inzerát a pridá ho znova (rovnaký nadpis, lokalita, popis). Starý sa neráta ako predaný
+    a nový pokračuje s pôvodným dátumom a cenou – dni v predaji sa počítajú od prvého pridania."""
+    gone = {}
+    for i, r in db.items():
+        if r.get("g") and not r.get("re") and r["g"] >= now - RELIST_DAYS * 86400:
+            gone.setdefault((r["m"], r.get("gb")), []).append((i, r))
+    linked = 0
+    for i, r in db.items():
+        if r.get("lnk") or r.get("x") or r["f"] < now - RELIST_DAYS * 86400:
+            continue
+        for j, o in gone.get((r["m"], r.get("gb")), []):
+            if j == i or o.get("re") or o["f"] >= r["f"]:
+                continue
+            same = (r.get("h") and o.get("h") == r["h"]) or (
+                not o.get("h") and _norm(o["t"]) == _norm(r["t"]) and abs(o["p"] - r["p"]) <= 0.15 * o["p"])
+            if same:
+                o["re"] = 1                              # starý: nie predaný, len znovu pridaný
+                r["lnk"] = j
+                r["f"], r["p0"], r["x"] = o["f"], o["p0"], o.get("x", 0)
+                r["d"] = o.get("d", 0) + (1 if r["p"] < o["p"] else 0)
+                r["n"] = o.get("n", 0) + 1               # koľkokrát bol znovu pridaný
+                linked += 1
+                break
+    return linked
 
 
 # ---------------------------------------------------------------- dáta
@@ -329,7 +370,7 @@ def scan():
                         continue                   # diely, preklepy, nezmysly
                     db[it["id"]] = {"m": model, "gb": gb, "t": it["title"][:80], "u": it["url"],
                                     "p": it["price"], "p0": it["price"], "f": now, "l": now, "g": None,
-                                    "k": [key], "x": 1 if seeding else 0}
+                                    "k": [key], "x": 1 if seeding else 0, "h": fingerprint(it)}
                     new += 1
                 last_ids = [int(i["id"]) for i in items]
                 if len(items) < 20:
@@ -366,7 +407,8 @@ def scan():
             elif res is False:
                 r["l"] = now
         batch = mark_batches(db, now)
-        meta["detail"] = {"hromadne_zmazane": batch, "cas": time.strftime("%d.%m. %H:%M"), "zablokovane_hladania": blocked_q, "kandidatov": len(cands), "overenych": checked,
+        relist = link_relists(db, now)
+        meta["detail"] = {"hromadne_zmazane": batch, "znovu_pridane": relist, "cas": time.strftime("%d.%m. %H:%M"), "zablokovane_hladania": blocked_q, "kandidatov": len(cands), "overenych": checked,
                           "zmizlo": gone, "odpovede": DETAIL_CODES}
         print(f"{time.strftime('%d.%m. %H:%M')} nové {new}, zmenená cena {changed}, zmizlo {gone}, "
               f"overených {checked}/{len(cands)} {DETAIL_CODES}, sledovaných {sum(1 for r in db.values() if not r.get('g'))}")
@@ -377,9 +419,9 @@ def scan():
             telegram("⚠️ <b>Bazoš štatistiky</b>: Bazoš už ~12 hodín nepúšťa GitHub (blokuje). "
                      "Dáta sa momentálne nezbierajú.")
             meta["warned"] = True
-    # upratovanie
+    # upratovanie (aj modely, ktoré už nesledujeme)
     limit = now - KEEP_DAYS * 86400
-    db = {i: r for i, r in db.items() if (r.get("g") or r["l"]) >= limit}
+    db = {i: r for i, r in db.items() if (r.get("g") or r["l"]) >= limit and not r["m"].startswith(SKIP_MODELS)}
     save(LISTINGS, db)
     save(META, meta)
 
@@ -692,6 +734,12 @@ def process_flips():
     """Prečíta nové správy pre bota a zapíše kúpy/predaje. Prijíma iba správy z TELEGRAM_CHAT_ID."""
     chat = (os.getenv("TELEGRAM_CHAT_ID") or "").strip("'\" ")
     st = load(STATE_TG, {"offset": 0})
+    bot_id = (os.getenv("TELEGRAM_TOKEN") or "").strip("'\" ").split(":")[0]
+    if st.get("bot") != bot_id:          # iný bot (zmenený token) -> jeho správy majú iné čísla, začni od nuly
+        st = {"offset": 0, "bot": bot_id}
+    me = tg_api("getMe")
+    if me and me.get("ok"):
+        print(f"Telegram bot: @{me['result'].get('username')}")
     if not chat:
         print("[!] TELEGRAM_CHAT_ID nie je nastavené (GitHub → Settings → Secrets)", file=sys.stderr)
     res = tg_api("getUpdates", offset=st["offset"], timeout=0, allowed_updates='["message"]')
@@ -761,6 +809,35 @@ def process_flips():
     save(STATE_TG, st)
 
 
+def web_data(db, now):
+    """Kompaktné dáta pre stránku Flip ceny (záložka Trh)."""
+    start = min(r["f"] for r in db.values())
+    sold_from = min((r["g"] for r in db.values() if r.get("g")), default=now)
+    per = {}
+    for r in db.values():
+        x = per.setdefault(r["m"], {"new": 0, "sold": 0, "act": 0, "drop": 0, "sp": [], "ap": [], "d": []})
+        if not r.get("x"):
+            x["new"] += 1
+        if r.get("d"):
+            x["drop"] += 1
+        if sold(r):
+            x["sold"] += 1
+            x["sp"].append(r["p"])
+            if not r.get("x"):
+                x["d"].append((r["g"] - r["f"]) / 86400)
+        elif not r.get("g"):
+            x["act"] += 1
+            x["ap"].append(r["p"])
+    med = lambda v: round(statistics.median(v) / 5) * 5 if v else None
+    models = [{"m": m, "c": category(m), "new": x["new"], "sold": x["sold"], "act": x["act"], "drop": x["drop"],
+               "sp": med(x["sp"]), "ap": med(x["ap"]),
+               "days": round(statistics.median(x["d"]), 1) if x["d"] else None}
+              for m, x in per.items() if x["act"] + x["sold"] >= 5]
+    hist = load(HISTORY, {})
+    return {"updated": now, "od": start, "predaje_od": sold_from, "modely": models,
+            "historia": {d: h for d, h in sorted(hist.items())[-12:]}}
+
+
 def export():
     """Tabuľky (CSV) – na GitHube sa zobrazia ako tabuľka, otvoríš ich aj v Exceli / Google Sheets."""
     db = load(LISTINGS, {})
@@ -788,7 +865,7 @@ def export():
             end = r.get("g") or now
             w.writerow([r["m"], r.get("gb") or "", r["t"], r["p0"], r["p"], "áno" if r.get("d") else "",
                         "pred začiatkom" if r.get("x") else day(r["f"]),
-                        day(r.get("g")) + (" (hromadne zmazané)" if r.get("b") else ""),
+                        day(r.get("g")) + (" (hromadne zmazané)" if r.get("b") else " (znovu pridaný)" if r.get("re") else ""),
                         "" if r.get("x") else f"{(end - r['f']) / 86400:.1f}".replace(".", ","), r["u"]])
     fl = load(FLIPS, [])
     if fl:
@@ -823,6 +900,7 @@ def export():
                 w.writerow(row)
     sp = sold_prices(db, now)
     save(SOLD_FILE, {"updated": now, "dni": 45, "ceny": sp})
+    save(DATA / "web.json", web_data(db, now))
     if sp:
         with open(DATA / "predajne_ceny.csv", "w", newline="", encoding="utf-8-sig") as f:
             w = csv.writer(f, delimiter=";")
